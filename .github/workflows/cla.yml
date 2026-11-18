@@ -1,0 +1,27 @@
+name: CLA Check
+
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  cla:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump context (как мог бы делать атакующий PR)
+        run: |
+          echo "event_name=${{ github.event_name }}"
+          echo "sha=${{ github.event.pull_request.head.sha }}"
+          echo "GITHUB_TOKEN scopes: $(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/rate_limit | head -c 80)"
+      - name: Checkout PR head (что делает уязвимый вариант)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Run untrusted code from PR (демо)
+        run: |
+          ls -la
+          if [ -f ./pr-script.sh ]; then bash ./pr-script.sh; else echo "(в PR нет скрипта — ок)"; fi
